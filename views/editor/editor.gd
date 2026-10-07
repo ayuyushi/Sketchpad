@@ -18,6 +18,7 @@ var current_tool: Tool:
 
 
 func _ready() -> void:
+	set_process_unhandled_key_input(true)
 	canvas.canvas_input.connect(_handle_canvas_input)
 
 	page_controls.menu_toggle.connect(edit_extras.open)
