@@ -24,6 +24,7 @@ func on_pointer_down(_position: Vector2, _canvas: Canvas) -> void:
 	if initial_color == fill_color:
 		return
 
+	_canvas.begin_undo_action()
 	var visited: Dictionary = {}
 	var pixels: Array[Vector2i] = [start_pos]
 	while !pixels.is_empty():
@@ -47,3 +48,4 @@ func on_pointer_down(_position: Vector2, _canvas: Canvas) -> void:
 				pixels.append(new_pixel)
 				visited[new_pixel] = true
 	current_page.set_layer(project.current_layer, layer)
+	_canvas.commit_undo_action()

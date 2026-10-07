@@ -17,6 +17,7 @@ func _ready() -> void:
 	stamp_tex = generate_stamp()
 
 func on_pointer_down(_position: Vector2, _canvas: Canvas) -> void:
+	_canvas.begin_undo_action()
 	_stroke_node = Node2D.new()
 	_canvas.dynamic_node.add_child(_stroke_node)
 	_has_last = true
@@ -42,7 +43,8 @@ func on_pointer_move(_position: Vector2, _canvas: Canvas) -> void:
 
 func on_pointer_up(_position: Vector2, _canvas: Canvas) -> void:
 	_has_last = false
-	_canvas.bake_page()
+	await _canvas.bake_page()
+	_canvas.commit_undo_action()
 
 
 func generate_stamp() -> Texture2D:

@@ -27,6 +27,20 @@ func _ready() -> void:
 	page_controls.onion_skin_toggle.connect(canvas.toggle_onion_skin)
 
 
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if event.keycode != KEY_Z or not (event.ctrl_pressed or event.meta_pressed):
+		return
+
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	if focus_owner is LineEdit or focus_owner is TextEdit:
+		return
+
+	canvas.undo()
+	get_viewport().set_input_as_handled()
+
+
 ## Creates a blank project and loads into the editor.
 func new_project() -> void:
 	var blank_project = Project.new()

@@ -3,10 +3,14 @@ extends Node2D
 
 signal canvas_input(event: InputEventMouse)
 
+const MAX_UNDO_HISTORY: int = 20
+
 @export var camera_movable: bool = false
 @export var camera: Camera2D
 
 var _project: Project
+var _undo_history: Array[Dictionary] = []
+var _pending_undo: Dictionary = {}
 
 @onready var control_node: Control = $Control
 @onready var layers_node: Node2D = $Control/Layers
@@ -26,10 +30,75 @@ func attach_project(project: Project) -> void:
 		_project.new_current_page.disconnect(render_page)
 
 	_project = project
+	_undo_history.clear()
+	_pending_undo.clear()
 
 	if _project:
 		_project.new_current_page.connect(render_page)
 		onion_skin_renderer.attach_project(project)
+
+
+## Saves the active layer before a painting action begins.
+func begin_undo_action() -> void:
+	if _pending_undo or not _project:
+		return
+
+	var page := _project.get_current_page()
+	var layer_index := _project.current_layer
+	if not page or layer_index < 0 or layer_index >= page.layers.size():
+		return
+
+	_pending_undo = {
+		"page": page,
+		"layer_index": layer_index,
+		"image": page.layers[layer_index].duplicate()
+	}
+
+
+## Adds the previous layer image to the bounded undo history if it changed.
+func commit_undo_action() -> void:
+	if _pending_undo.is_empty():
+		return
+
+	var page: Page = _pending_undo["page"]
+	var layer_index: int = _pending_undo["layer_index"]
+	var image_before: Image = _pending_undo["image"]
+	_pending_undo.clear()
+
+	if layer_index < 0 or layer_index >= page.layers.size():
+		return
+	if image_before.get_data() == page.layers[layer_index].get_data():
+		return
+
+	_undo_history.append(
+		{"page": page, "layer_index": layer_index, "image": image_before}
+	)
+	if _undo_history.size() > MAX_UNDO_HISTORY:
+		_undo_history.pop_front()
+
+
+## Restores the most recent painting action, if one is available.
+func undo() -> bool:
+	if _pending_undo:
+		return false
+
+	while not _undo_history.is_empty():
+		var snapshot: Dictionary = _undo_history.pop_back()
+		var page: Page = snapshot["page"]
+		var layer_index: int = snapshot["layer_index"]
+		if (
+			not _project
+			or not _project.frames.has(page)
+			or layer_index < 0
+			or layer_index >= page.layers.size()
+		):
+			continue
+
+		var image_before: Image = snapshot["image"]
+		page.set_layer(layer_index, image_before.duplicate())
+		return true
+
+	return false
 
 
 ## Refreshes canvas sprites to current page. [br]

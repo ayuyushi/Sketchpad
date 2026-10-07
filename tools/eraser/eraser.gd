@@ -17,6 +17,7 @@ func _ready() -> void:
 
 
 func on_pointer_down(_position: Vector2, _canvas: Canvas) -> void:
+	_canvas.begin_undo_action()
 	_has_last = true
 	_last_pos = _position
 	_place_stamp(_last_pos, _canvas)
@@ -40,6 +41,7 @@ func on_pointer_move(_position: Vector2, _canvas: Canvas) -> void:
 
 func on_pointer_up(_position: Vector2, _canvas: Canvas) -> void:
 	_has_last = false
+	_canvas.commit_undo_action()
 
 
 func generate_filter() -> Texture2D:

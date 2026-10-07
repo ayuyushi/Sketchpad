@@ -19,6 +19,7 @@ func on_pointer_down(_position: Vector2, _canvas: Canvas) -> void:
 	var page: Page = project.frames[project.current_frame]
 	var layer: Image = page.layers[project.current_layer]
 
+	_canvas.begin_undo_action()
 	dragging = true
 	_start_mouse = _position
 	_layer_image = layer.duplicate()
@@ -62,3 +63,4 @@ func on_pointer_up(position: Vector2, canvas: Canvas) -> void:
 		moved.blend_rect(_layer_image, Rect2(Vector2.ZERO, _layer_image.get_size()), offset)
 		page.set_layer(project.current_layer, moved)
 		_layer_image = null
+		canvas.commit_undo_action()

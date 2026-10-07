@@ -58,6 +58,49 @@ func test_canvas_set_onion_skin_depth_works():
 	canvas.set_onion_skin_depth(0)
 	assert_eq(renderer.depth, 1, "Depth should never be lower than 1")
 
+
+func test_undo_restores_previous_active_layer_image():
+	var page := project.get_current_page()
+	var layer_index := project.current_layer
+	var layer := page.layers[layer_index]
+	var pixel := Vector2i(10, 10)
+	var original_color := layer.get_pixelv(pixel)
+
+	canvas.begin_undo_action()
+	layer.set_pixelv(pixel, Color.RED)
+	page.set_layer(layer_index, layer)
+	canvas.commit_undo_action()
+
+	assert_true(canvas.undo(), "Undo should restore the previous painting state")
+	assert_eq(
+		page.layers[layer_index].get_pixelv(pixel),
+		original_color,
+		"Undo should restore the previous active-layer pixel"
+	)
+
+
+func test_undo_history_is_limited_to_twenty_actions():
+	var page := project.get_current_page()
+	var layer_index := project.current_layer
+	var layer := page.layers[layer_index]
+	var pixel := Vector2i(10, 10)
+
+	for action_index in range(21):
+		canvas.begin_undo_action()
+		layer.set_pixelv(pixel, Color(float(action_index + 1) / 21.0, 0, 0, 1))
+		page.set_layer(layer_index, layer)
+		canvas.commit_undo_action()
+
+	for _action_index in range(20):
+		assert_true(canvas.undo(), "Each of the most recent twenty actions should be undoable")
+
+	assert_almost_eq(
+		page.layers[layer_index].get_pixelv(pixel).r,
+		1.0 / 21.0,
+		0.005,
+		"Undo history should discard the oldest action after reaching its limit"
+	)
+
 # TODO - Create unit tests and investigate GUT and RenderingServer issues.
 # func test_bake():
 # 	var rect = ColorRect.new()
